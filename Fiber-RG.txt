@@ -1,0 +1,61 @@
+dir1 = getDirectory("Choose Source Directory ");
+dir2 = getDirectory("Choose Destination Directory for tif images");
+run("Input/Output...", "jpeg=50");
+folder = getFileList(dir1);
+Array.show(folder);
+setBatchMode(true);
+for (j=0; j<folder.length; j++) {
+	if (endsWith(folder[j], "/"))
+		File.makeDirectory(dir2+folder[j]);
+		list = getFileList(dir1+folder[j]);
+		for (i=0; i<list.length; i++) {
+ 			list[i] = substring(list[i], 4, 10);
+		}
+
+		function unique(InputArray) {
+    			separator = "\\n";    
+    			InputArrayAsString = InputArray[0];
+    			for(i = 1; i < InputArray.length; i++){
+        			InputArrayAsString += separator + InputArray[i];
+    			}
+    
+    			script = "result = r'" + 
+             			separator +
+             			"'.join(set('" +
+             			InputArrayAsString +
+             			"'.split('" + 
+             			separator +
+            			"')))";
+    
+    		result = eval("python", script);
+    		OutputArray = split(result, separator);
+    		return OutputArray;
+		}
+
+		InputArray=Array.copy(list);
+		OutputArray = unique(InputArray);
+		Array.sort(OutputArray);
+		Array.show(OutputArray);
+
+
+		for (i=0; i<OutputArray.length; i++) {
+ 			showProgress(i+1, OutputArray.length);  
+ 			C1 = "Img-"+OutputArray[i]+"-R.TIF";
+ 			C2 = "Img-"+OutputArray[i]+"-G.TIF";  
+ 			if (File.exists(dir1+folder[j]+C1) && File.exists(dir1+folder[j]+C2)){
+				open(dir1+folder[j]+C1);
+  				open(dir1+folder[j]+C2);
+  				selectWindow(C1);
+  				run("Enhance Contrast", "saturated=0.55");
+  				run("Apply LUT");
+  				selectWindow(C2);
+  				run("Enhance Contrast", "saturated=0.95");
+  				run("Apply LUT");
+  				run("Merge Channels...", "c1="+C1+" c2="+C2+" create");
+  				saveAs("Tiff", dir2+folder[j]+"Img-"+OutputArray[i]);
+  				close();
+        			print(dir2+folder[j]+"Img-"+OutputArray[i]+" is being merged");
+     			}
+		}
+}
+print("All the images have now been merged");
